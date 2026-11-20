@@ -23,9 +23,12 @@ class UnitImageInline(admin.TabularInline):
 class UnitAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "code",
         "name",
         "listing_type",
         "category",
+        "rooms",
+        "bathrooms",
         "finishing",
         "floor",
         "area",
@@ -33,11 +36,32 @@ class UnitAdmin(admin.ModelAdmin):
         "city",
         "district",
     )
-    list_display_links = ("id", "name")
-    list_filter = ("listing_type", "category", "finishing", "floor", "city")
-    search_fields = ("name", "city", "district", "address")
+    list_display_links = ("id", "code", "name")
+    list_filter = ("listing_type", "category", "rooms", "bathrooms", "finishing", "floor", "city")
+    search_fields = ("code", "name", "city", "district", "address")
     ordering = ("-created_at",)
     list_per_page = 25
+
+    fieldsets = (
+        (
+            "البيانات الأساسية",
+            {
+                "fields": ("code", "name", "listing_type", "category", "price"),
+            },
+        ),
+        (
+            "مواصفات الوحدة",
+            {
+                "fields": ("rooms", "bathrooms", "area", "floor", "finishing"),
+            },
+        ),
+        (
+            "الموقع",
+            {
+                "fields": ("city", "district", "address"),
+            },
+        ),
+    )
 
     # ربط الصور بصفحة الوحدة
     inlines = [UnitImageInline]

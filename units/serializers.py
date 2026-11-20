@@ -21,12 +21,15 @@ class UnitSerializer(serializers.ModelSerializer):
         model = Unit
         fields = (
             "id",
+            "code",
             "name",
             "listing_type",
             "listing_type_display",
             "category",
             "finishing",
             "floor",
+            "rooms",
+            "bathrooms",
             "area",
             "price",
             "city",

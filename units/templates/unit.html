@@ -7,20 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'units/style.css' %}">
+    <link rel="stylesheet" href="{% static 'units/style.css' %}?v=9">
 </head>
 <body data-unit-id="{{ pk }}">
     <header class="topbar">
         <div class="wrap topbar-inner">
             <a class="brand" href="/">
-                <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
-                    <rect x="7" y="4" width="18" height="24" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/>
-                    <rect x="7" y="14" width="18" height="6" fill="#f5a524"/>
-                    <path d="M3 28h26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <span>وحدات</span>
+                <img src="/media/ssd.jpeg" alt="وحدات" class="brand-logo">
+                <span class="brand-name"></span>
             </a>
-            <a class="back-link" href="/">كل الوحدات</a>
+            <a class="back-link" href="/">Shahteno for investment</a>
         </div>
     </header>
 
@@ -29,10 +25,13 @@
     </main>
 
     <footer class="site-footer">
-        <div class="wrap">وحدات</div>
+        <div class="wrap footer-inner">
+            <span>وحدات</span>
+            <span class="footer-note">جميع الحقوق محفوظة</span>
+        </div>
     </footer>
 
-    <script src="{% static 'units/common.js' %}"></script>
-    <script src="{% static 'units/unit.js' %}"></script>
+    <script src="{% static 'units/common.js' %}?v=9"></script>
+    <script src="{% static 'units/unit.js' %}?v=9"></script>
 </body>
 </html>

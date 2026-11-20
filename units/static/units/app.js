@@ -12,6 +12,12 @@
     var statusEl = document.getElementById("status");
     var moreBtn = document.getElementById("more-btn");
 
+    var modeTabsEl = document.getElementById("mode-tabs");
+    var modeTabBtns = modeTabsEl
+        ? Array.prototype.slice.call(modeTabsEl.querySelectorAll(".mode-tab"))
+        : [];
+    var selectedListingType = ""; // "" = الكل، "sale" = بيع، "rent" = إيجار
+
     var nf = new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 0 });
     var nextUrl = null;
     var shown = 0;
@@ -30,13 +36,50 @@
         return nf.format(Number(value));
     }
 
+    function syncListingTabsUI() {
+        if (!modeTabsEl) return;
+        modeTabsEl.setAttribute("data-active", selectedListingType || "all");
+        modeTabBtns.forEach(function (btn) {
+            var isActive = btn.getAttribute("data-type") === selectedListingType;
+            btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+    }
+
+    function setListingType(nextType) {
+        // الضغط على نفس الزر المحدد يعيد للكل ("")، والضغط على الآخر ينقل المؤشر إليه مباشرة
+        selectedListingType = (selectedListingType === nextType) ? "" : nextType;
+        syncListingTabsUI();
+        search();
+    }
+
+    modeTabBtns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var type = btn.getAttribute("data-type");
+            if (type === "sale" || type === "rent") {
+                setListingType(type);
+            }
+        });
+    });
+
     function buildUrl() {
         var params = new URLSearchParams();
-        new FormData(form).forEach(function (value, key) {
-            value = String(value).trim();
-            if (value !== "") params.append(key, value);
-        });
-        params.append("ordering", orderingEl.value);
+
+        if (form) {
+            new FormData(form).forEach(function (value, key) {
+                if (key === "listing_type") return;
+                value = String(value).trim();
+                if (value !== "") params.append(key, value);
+            });
+        }
+
+        if (selectedListingType !== "") {
+            params.append("listing_type", selectedListingType);
+        }
+
+        if (orderingEl && orderingEl.value) {
+            params.append("ordering", orderingEl.value);
+        }
+
         return SEARCH_URL + "?" + params.toString();
     }
 
@@ -50,10 +93,8 @@
         var top = ground - stories * h;
         var svg = '<svg viewBox="0 0 240 160" role="img" aria-hidden="true" preserveAspectRatio="xMidYMax meet">';
 
-        // خط الأرض
         svg += '<path d="M10 ' + ground + 'H230" stroke="#9fc0da" stroke-width="1.5"/>';
 
-        // الأدوار
         for (var i = 0; i < stories; i++) {
             var y = ground - (i + 1) * h;
             var lit = i === floor;
@@ -63,23 +104,19 @@
                     : 'fill="rgba(255,255,255,0.04)" stroke="#9fc0da" stroke-opacity="0.7"') +
                 ' stroke-width="1"/>';
 
-            // نوافذ
             for (var k = 0; k < 4; k++) {
                 var wx = x + 12 + k * 24;
-                if (i === 0 && (k === 1 || k === 2)) continue; // مدخل الدور الأرضي
+                if (i === 0 && (k === 1 || k === 2)) continue;
                 svg += '<rect x="' + wx + '" y="' + (y + h * 0.3) + '" width="12" height="' + (h * 0.4) +
                     '" fill="' + (lit ? "#0d2b45" : "#9fc0da") + '" opacity="' + (lit ? "0.55" : "0.35") + '"/>';
             }
         }
 
-        // مدخل
         svg += '<rect x="' + (x + 42) + '" y="' + (ground - h * 0.8) + '" width="24" height="' + (h * 0.8) +
             '" fill="none" stroke="#9fc0da" stroke-width="1.2"/>';
 
-        // سطح
         svg += '<path d="M' + (x - 5) + ' ' + top + 'H' + (x + w + 5) + '" stroke="#9fc0da" stroke-width="2"/>';
 
-        // خط إرشاد للدور المضاء
         var ly = ground - (floor + 0.5) * h;
         svg += '<path d="M' + (x + w) + ' ' + ly + 'H' + (x + w + 16) + '" stroke="#f5a524" stroke-width="1.4"/>';
         svg += '<circle cx="' + (x + w + 16) + '" cy="' + ly + '" r="2.4" fill="#f5a524"/>';
@@ -91,32 +128,59 @@
     var ICON_PIN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
     var ICON_AREA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
     var ICON_FLOOR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 20h18M5 20V8l7-4 7 4v12M9 20v-6h6v6"/></svg>';
+    var ICON_ROOM = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v9"/><path d="M21 10v9"/><path d="M3 16h18"/><path d="M6 16v-3a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/><path d="M7 11V8a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3"/><path d="M13 11V8a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3"/></svg>';
+    var ICON_BATH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3z"/><path d="M6 12V6a2 2 0 0 1 4 0"/><path d="M6 19v2"/><path d="M18 19v2"/></svg>';
     var ICON_FINISH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20l9-9M13 11l-2-2 6-6 4 4-6 6-2-2z"/></svg>';
     var ICON_CHAT = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path stroke-width="1.8" d="M5 3h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-7l-4.5 4v-4H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>' +
-    '<path stroke-width="3.2" transform="translate(7.4 5.2) scale(0.4)" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>' +
-    '</svg>';
+        '<path stroke-width="1.8" d="M5 3h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-7l-4.5 4v-4H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>' +
+        '<path stroke-width="3.2" transform="translate(7.4 5.2) scale(0.4)" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>' +
+        '</svg>';
 
     function whatsappLink(unit) {
-    var pageUrl = window.location.origin + "/unit/" + unit.id + "/";
-    var text = "مرحبًا، أرغب في الاستفسار عن هذه الوحدة:\n" +
-        unit.name + "\n" +
-        "رقم الوحدة: " + unit.id + "\n" +
-        "رابط الوحدة: " + pageUrl;
-    return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text);
-}
+        var pageUrl = window.location.origin + "/unit/" + unit.id + "/";
+        var codeLine = unit.code ? "كود الوحدة: " + unit.code + "\n" : "";
+        var text = "مرحبًا، أرغب في الاستفسار عن هذه الوحدة:\n" +
+            unit.name + "\n" +
+            codeLine +
+            "رقم الوحدة: " + unit.id + "\n" +
+            "رابط الوحدة: " + pageUrl;
+        return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text);
+    }
+
     /* ---------- بطاقة وحدة ---------- */
-        var FLOORS = ["الأرضي", "الأول", "الثاني", "الثالث", "الرابع", "الخامس",
-        "السادس", "السابع", "الثامن", "التاسع", "العاشر"];
+    var FLOORS = [
+        "الأرضي", "الأول", "الثاني", "الثالث", "الرابع", "الخامس",
+        "السادس", "السابع", "الثامن", "التاسع", "العاشر"
+    ];
 
     function floorLabel(floor) {
         var n = Number(floor);
         return isNaN(n) ? "" : "الدور " + (FLOORS[n] || num(n));
     }
 
+    function roomsLabel(rooms) {
+        var n = Number(rooms);
+        if (rooms == null || rooms === "" || isNaN(n) || n <= 0) return "";
+        if (n === 1) return "غرفة واحدة";
+        if (n === 2) return "غرفتان";
+        if (n >= 3 && n <= 10) return num(n) + " غرف";
+        return num(n) + " غرفة";
+    }
+
+    function bathsLabel(baths) {
+        var n = Number(baths);
+        if (baths == null || baths === "" || isNaN(n) || n <= 0) return "";
+        if (n === 1) return "حمام واحد";
+        if (n === 2) return "حمامان";
+        if (n >= 3 && n <= 10) return num(n) + " حمامات";
+        return num(n) + " حمام";
+    }
+
     function card(unit) {
         var isRent = unit.listing_type === "rent";
         var place = [unit.district, unit.city].filter(Boolean).join("، ");
+        var roomsText = roomsLabel(unit.rooms);
+        var bathsText = bathsLabel(unit.bathrooms);
 
         var visual = unit.main_image
             ? '<img class="photo" src="' + esc(unit.main_image) + '" alt="' + esc(unit.name) + '" loading="lazy">'
@@ -131,13 +195,18 @@
                     '</span>' +
                 '</div>' +
                 '<div class="card-body">' +
-                    '<span class="card-type">' + esc(unit.category) + '</span>' +
+                    '<div class="card-meta">' +
+                        '<span class="card-type">' + esc(unit.category) + '</span>' +
+                        (unit.code ? '<span class="card-code">كود: ' + esc(unit.code) + '</span>' : '') +
+                    '</div>' +
                     '<h3><a class="card-link" href="/unit/' + unit.id + '/">' + esc(unit.name) + '</a></h3>' +
                     '<p class="place">' + ICON_PIN + '<span>' + esc(place) + '</span></p>' +
                     '<ul class="specs">' +
+                        (roomsText ? '<li>' + ICON_ROOM + esc(roomsText) + '</li>' : '') +
+                        (bathsText ? '<li>' + ICON_BATH + esc(bathsText) + '</li>' : '') +
                         '<li>' + ICON_AREA + num(unit.area) + ' م²</li>' +
                         '<li>' + ICON_FLOOR + esc(floorLabel(unit.floor)) + '</li>' +
-                        '<li>' + ICON_FINISH + esc(unit.finishing) + '</li>' +
+                        (unit.finishing ? '<li>' + ICON_FINISH + esc(unit.finishing) + '</li>' : '') +
                     '</ul>' +
                     '<p class="price">' + num(unit.price) + ' جنيه' +
                         (isRent ? '<small>/ شهريًا</small>' : '') +
@@ -178,7 +247,9 @@
     }
 
     function updateCount(total) {
-        countEl.textContent = total === 0 ? "لا توجد وحدات" : num(total) + (total === 1 ? " وحدة" : " وحدة متاحة");
+        countEl.textContent = total === 0
+            ? "لا توجد وحدات"
+            : num(total) + (total === 1 ? " وحدة" : " وحدة متاحة");
     }
 
     /* ---------- التحميل ---------- */
@@ -200,9 +271,8 @@
                 return response.json();
             })
             .then(function (data) {
-                if (myRequest !== requestId) return; // وصل رد أحدث
+                if (myRequest !== requestId) return;
 
-                // يدعم الرد المقسّم إلى صفحات {count, next, results} والرد كقائمة
                 var items = Array.isArray(data) ? data : data.results || [];
                 var total = Array.isArray(data) ? items.length : (data.count != null ? data.count : items.length);
                 nextUrl = Array.isArray(data) ? null : data.next;
@@ -215,7 +285,7 @@
                 updateCount(total);
 
                 if (total === 0) {
-                    showStatus("لا توجد وحدات مطابقة لبحثك. جرّب توسيع نطاق السعر أو المساحة.", false, {
+                    showStatus("لا توجد وحدات مطابقة لبحثك. جرّب تعديل الكود أو المكان أو نطاق السعر.", false, {
                         label: "مسح البحث",
                         action: resetSearch
                     });
@@ -237,38 +307,51 @@
     }
 
     function search() {
-        var min = Number(form.elements.min_price.value);
-        var max = Number(form.elements.max_price.value);
-        if (form.elements.min_price.value && form.elements.max_price.value && min > max) {
-            showStatus("السعر في خانة «من» أكبر من السعر في خانة «إلى». عدّل الرقمين وأعد البحث.", true);
-            return;
+        var minPriceEl = form && form.elements.min_price;
+        var maxPriceEl = form && form.elements.max_price;
+        if (minPriceEl && maxPriceEl && minPriceEl.value && maxPriceEl.value) {
+            if (Number(minPriceEl.value) > Number(maxPriceEl.value)) {
+                showStatus("السعر في خانة «من» أكبر من السعر في خانة «إلى». عدّل الرقمين وأعد البحث.", true);
+                return;
+            }
         }
-        var minA = Number(form.elements.min_area.value);
-        var maxA = Number(form.elements.max_area.value);
-        if (form.elements.min_area.value && form.elements.max_area.value && minA > maxA) {
-            showStatus("المساحة في خانة «من» أكبر من المساحة في خانة «إلى». عدّل الرقمين وأعد البحث.", true);
-            return;
+
+        var minAreaEl = form && form.elements.min_area;
+        var maxAreaEl = form && form.elements.max_area;
+        if (minAreaEl && maxAreaEl && minAreaEl.value && maxAreaEl.value) {
+            if (Number(minAreaEl.value) > Number(maxAreaEl.value)) {
+                showStatus("المساحة في خانة «من» أكبر من المساحة في خانة «إلى». عدّل الرقمين وأعد البحث.", true);
+                return;
+            }
         }
+
         load(buildUrl(), false);
     }
 
     function resetSearch() {
-        form.reset();
-        orderingEl.value = "-created_at";
+        if (form) form.reset();
+        selectedListingType = "";
+        syncListingTabsUI();
+        if (orderingEl) orderingEl.value = "-created_at";
         load(buildUrl(), false);
     }
 
     /* ---------- الأحداث ---------- */
-    form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        search();
-    });
-    resetBtn.addEventListener("click", resetSearch);
-    orderingEl.addEventListener("change", search);
-    moreBtn.addEventListener("click", function () {
-        if (nextUrl) load(nextUrl, true);
-    });
+    if (form) {
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            search();
+        });
+    }
 
-    // تحميل أول عند فتح الصفحة
+    if (resetBtn) resetBtn.addEventListener("click", resetSearch);
+    if (orderingEl) orderingEl.addEventListener("change", search);
+    if (moreBtn) {
+        moreBtn.addEventListener("click", function () {
+            if (nextUrl) load(nextUrl, true);
+        });
+    }
+
+    syncListingTabsUI();
     search();
 })();

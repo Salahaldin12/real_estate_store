@@ -29,18 +29,41 @@
         return "الدور " + (ORDINALS[n] || num(n));
     }
 
+    function roomsLabel(rooms) {
+        var n = Number(rooms);
+        if (rooms == null || rooms === "" || isNaN(n) || n <= 0) return "";
+        if (n === 1) return "غرفة واحدة";
+        if (n === 2) return "غرفتان";
+        if (n >= 3 && n <= 10) return num(n) + " غرف";
+        return num(n) + " غرفة";
+    }
+
+    function bathsLabel(baths) {
+        var n = Number(baths);
+        if (baths == null || baths === "" || isNaN(n) || n <= 0) return "";
+        if (n === 1) return "حمام واحد";
+        if (n === 2) return "حمامان";
+        if (n >= 3 && n <= 10) return num(n) + " حمامات";
+        return num(n) + " حمام";
+    }
+
     function unitPath(id) {
         return "/unit/" + id + "/";
     }
 
-    // رابط الواتساب: رسالة جاهزة فيها اسم الوحدة ورقمها ورابط صفحتها
+    // رابط الواتساب: رسالة جاهزة فيها اسم الوحدة وكودها ورقمها ورابط صفحتها
     function whatsappLink(unit) {
         var pageUrl = window.location.origin + unitPath(unit.id);
-        var text = "مرحبًا، أرغب في الاستفسار عن هذه الوحدة:\n" +
-            unit.name + "\n" +
-            "رقم الوحدة: " + unit.id + "\n" +
-            "رابط الوحدة: " + pageUrl;
-        return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text);
+        var lines = [
+            "مرحبًا، أرغب في الاستفسار عن هذه الوحدة:",
+            unit.name
+        ];
+        if (unit.code) {
+            lines.push("كود الوحدة: " + unit.code);
+        }
+        lines.push("رقم الوحدة: " + unit.id);
+        lines.push("رابط الوحدة: " + pageUrl);
+        return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(lines.join("\n"));
     }
 
     /* رسم واجهة عمارة يُضاء فيها دور الوحدة (يظهر عند عدم وجود صور) */
@@ -87,6 +110,8 @@
         pin: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
         area: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
         floor: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 20h18M5 20V8l7-4 7 4v12M9 20v-6h6v6"/></svg>',
+        room: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v9"/><path d="M21 10v9"/><path d="M3 16h18"/><path d="M6 16v-3a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3"/><path d="M7 11V8a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3"/><path d="M13 11V8a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3"/></svg>',
+        bath: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3z"/><path d="M6 12V6a2 2 0 0 1 4 0"/><path d="M6 19v2"/><path d="M18 19v2"/></svg>',
         finish: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20l9-9M13 11l-2-2 6-6 4 4-6 6-2-2z"/></svg>',
         photos: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5-9 7"/></svg>',
         chevron: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
@@ -100,6 +125,8 @@
         esc: esc,
         num: num,
         floorLabel: floorLabel,
+        roomsLabel: roomsLabel,
+        bathsLabel: bathsLabel,
         unitPath: unitPath,
         whatsappLink: whatsappLink,
         elevation: elevation,

@@ -12,10 +12,10 @@ class UnitSearchView(ListAPIView):
     queryset = Unit.objects.prefetch_related("images")
     serializer_class = UnitSerializer
 
-    # الفلترة (المكان، السعر، المساحة) + إمكانية الترتيب
+    # الفلترة (النوع، الكود، المكان، السعر، المساحة) + الترتيب
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = UnitSearchFilter
 
-    # الترتيب: ?ordering=price أو ?ordering=-price
-    ordering_fields = ["price", "area", "created_at"]
+    # الترتيب: ?ordering=price أو ?ordering=-price أو ?ordering=rooms
+    ordering_fields = ["price", "area", "rooms", "created_at"]
     ordering = ["-created_at"]

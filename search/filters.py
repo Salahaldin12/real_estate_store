@@ -5,6 +5,12 @@ from units.models import Unit
 
 
 class UnitSearchFilter(django_filters.FilterSet):
+    # نوع العرض: sale أو rent
+    listing_type = django_filters.CharFilter(field_name="listing_type", lookup_expr="exact")
+
+    # كود الوحدة: بحث جزئي غير حساس لحالة الأحرف
+    code = django_filters.CharFilter(field_name="code", lookup_expr="icontains")
+
     # بحث بالمكان: يبحث في المدينة والحي والعنوان معًا
     location = django_filters.CharFilter(method="filter_location", label="المكان")
 
@@ -18,7 +24,7 @@ class UnitSearchFilter(django_filters.FilterSet):
 
     class Meta:
         model = Unit
-        fields = []
+        fields = ["listing_type", "code"]
 
     def filter_location(self, queryset, name, value):
         return queryset.filter(

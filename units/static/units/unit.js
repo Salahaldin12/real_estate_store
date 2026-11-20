@@ -14,6 +14,24 @@
         return '<div><dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd></div>';
     }
 
+    function roomsLabel(rooms) {
+        var n = Number(rooms);
+        if (rooms == null || rooms === "" || isNaN(n) || n <= 0) return "";
+        if (n === 1) return "غرفة واحدة";
+        if (n === 2) return "غرفتان";
+        if (n >= 3 && n <= 10) return num(n) + " غرف";
+        return num(n) + " غرفة";
+    }
+
+    function bathsLabel(baths) {
+        var n = Number(baths);
+        if (baths == null || baths === "" || isNaN(n) || n <= 0) return "";
+        if (n === 1) return "حمام واحد";
+        if (n === 2) return "حمامان";
+        if (n >= 3 && n <= 10) return num(n) + " حمامات";
+        return num(n) + " حمام";
+    }
+
     function gallery(unit) {
         var images = unit.images || [];
 
@@ -56,8 +74,11 @@
                     ICONS.chat + 'تواصل عبر واتساب</a>' +
                 '<p class="hint">ستصلنا رسالتك ومعها رابط هذه الوحدة، فنعرف أي وحدة تسأل عنها.</p>' +
                 '<dl class="facts">' +
+                    fact("كود الوحدة", unit.code) +
                     fact("رقم الوحدة", num(unit.id)) +
                     fact("التصنيف", unit.category) +
+                    fact("عدد الغرف", roomsLabel(unit.rooms)) +
+                    fact("عدد الحمامات", bathsLabel(unit.bathrooms)) +
                     fact("المساحة", num(unit.area) + " م²") +
                     fact("الدور", U.floorLabel(unit.floor)) +
                     fact("التشطيب", unit.finishing) +
