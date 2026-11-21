@@ -686,3 +686,35 @@ html:not([dir="rtl"]) .mode-tabs[data-active="rent"] .mode-thumb {
         scroll-behavior: auto !important;
     }
 }
+
+
+.share-wa-btn {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    height: 44px;
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    background: #eef6f1;
+    border: 1px solid #b7dec6;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.share-wa-btn:hover {
+    background: #dff0e6;
+    border-color: #168a45;
+}
+
+.info .share-wa-btn {
+    height: 48px;
+    font-size: 16px;
+}

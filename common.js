@@ -3,7 +3,7 @@
     "use strict";
 
     // رقم الواتساب بالصيغة الدولية بدون + ولا أصفار
-    var WHATSAPP_NUMBER = "201114842007";
+    var WHATSAPP_NUMBER = "201105094278";
 
     var nf = new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 0 });
 

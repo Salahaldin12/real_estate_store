@@ -3,7 +3,7 @@
     "use strict";
 
     // رقم الواتساب بالصيغة الدولية بدون + ولا أصفار
-    var WHATSAPP_NUMBER = "201114842007";
+    var WHATSAPP_NUMBER = "201105094278";
 
     var nf = new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 0 });
 
@@ -106,6 +106,74 @@
         return svg + "</svg>";
     }
 
+    function formatUnitShareText(unit, pageUrl) {
+        var unitName = unit.name || unit.title || "وحدة عقارية";
+        var lines = [
+            "🏠 *" + unitName + "*",
+            unit.code ? "🔖 كود الوحدة: *" + unit.code + "*" : "",
+            unit.category_label || unit.category ? "📌 النوع: " + (unit.category_label || unit.category) : "",
+            unit.price_formatted || unit.price ? "💰 السعر: *" + (unit.price_formatted || unit.price) + "*" : "",
+            unit.rooms ? "🛏️ الغرف: " + (roomsLabel(unit.rooms) || unit.rooms) : "",
+            unit.bathrooms ? "🚿 الحمامات: " + (bathsLabel(unit.bathrooms) || unit.bathrooms) : "",
+            unit.area ? "📐 المساحة: " + unit.area : "",
+            unit.floor !== undefined && unit.floor !== null && unit.floor !== "" ? "🏢 " + floorLabel(unit.floor) : "",
+            unit.location || unit.city ? "📍 الموقع: " + (unit.location || unit.city) : "",
+            pageUrl ? "🔗 تفاصيل الوحدة: " + pageUrl : ""
+        ].filter(Boolean);
+
+        return lines.join("\n");
+    }
+
+    async function fetchUnitImageFile(imageUrl, fallbackName) {
+        if (!imageUrl) return null;
+        try {
+            var absUrl = new URL(imageUrl, window.location.origin).href;
+            var res = await fetch(absUrl, { credentials: "same-origin" });
+            if (!res.ok) return null;
+            var blob = await res.blob();
+            if (!blob || !blob.size) return null;
+            var mime = blob.type || "image/jpeg";
+            var ext = (mime.split("/")[1] || "jpg").split(";")[0];
+            var cleanName = String(fallbackName || "unit")
+                .trim()
+                .replace(/[^\w\u0600-\u06FF-]+/g, "-") || "unit";
+            return new File([blob], cleanName + "." + ext, { type: mime });
+        } catch (_) {
+            return null;
+        }
+    }
+
+    async function shareUnitToWhatsApp(unit, pageUrl) {
+        var targetUrl = pageUrl || window.location.href;
+        var text = formatUnitShareText(unit, targetUrl);
+        var imageUrl = unit.image_url || unit.image || (Array.isArray(unit.images) ? unit.images[0] : "");
+        var imageFile = await fetchUnitImageFile(imageUrl, unit.code || unit.name || unit.title || "unit");
+
+        if (navigator.share) {
+            try {
+                if (imageFile && (!navigator.canShare || navigator.canShare({ files: [imageFile] }))) {
+                    await navigator.share({
+                        title: unit.name || unit.title || "تفاصيل الوحدة",
+                        text: text,
+                        files: [imageFile]
+                    });
+                    return;
+                }
+                await navigator.share({
+                    title: unit.name || unit.title || "تفاصيل الوحدة",
+                    text: text,
+                    url: targetUrl
+                });
+                return;
+            } catch (err) {
+                if (err && err.name === "AbortError") return;
+            }
+        }
+
+        var waUrl = "https://wa.me/?text=" + encodeURIComponent(text);
+        window.open(waUrl, "_blank", "noopener,noreferrer");
+    }
+
     var ICONS = {
         pin: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
         area: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
@@ -128,6 +196,7 @@
         roomsLabel: roomsLabel,
         bathsLabel: bathsLabel,
         unitPath: unitPath,
+        shareUnitToWhatsApp: shareUnitToWhatsApp,
         whatsappLink: whatsappLink,
         elevation: elevation,
         icons: ICONS

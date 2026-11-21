@@ -72,6 +72,8 @@
                     (isRent ? '<small>/ شهريًا</small>' : '') + '</p>' +
                 '<a class="wa-btn" href="' + esc(U.whatsappLink(unit)) + '" target="_blank" rel="noopener noreferrer">' +
                     ICONS.chat + 'تواصل عبر واتساب</a>' +
+                '<button type="button" id="share-unit-wa-btn" class="share-wa-btn">' +
+                    'مشاركة الوحدة عبر واتساب</button>' +
                 '<p class="hint">ستصلنا رسالتك ومعها رابط هذه الوحدة، فنعرف أي وحدة تسأل عنها.</p>' +
                 '<dl class="facts">' +
                     fact("كود الوحدة", unit.code) +
@@ -96,6 +98,37 @@
                 btn.setAttribute("aria-current", "true");
             });
         });
+
+        var shareBtn = document.getElementById("share-unit-wa-btn");
+        if (shareBtn && typeof U.shareUnitToWhatsApp === "function") {
+            shareBtn.addEventListener("click", function () {
+                var activeSrc = (main && main.getAttribute("src")) ||
+                    (unit.images && unit.images[0] && unit.images[0].image) ||
+                    unit.main_image || "";
+                var absImage = activeSrc ? new URL(activeSrc, window.location.origin).href : "";
+                var fullLocation = [unit.address, unit.district, unit.city].filter(Boolean).join("، ");
+
+                var sharePayload = {
+                    name: unit.name,
+                    title: unit.name,
+                    code: unit.code,
+                    category: unit.category,
+                    category_label: unit.listing_type_display || (isRent ? "للإيجار" : "للبيع"),
+                    price: unit.price != null
+                        ? num(unit.price) + " جنيه" + (isRent ? " / شهريًا" : "")
+                        : "",
+                    rooms: unit.rooms,
+                    bathrooms: unit.bathrooms,
+                    area: unit.area != null ? num(unit.area) + " م²" : "",
+                    floor: unit.floor,
+                    location: fullLocation,
+                    image: absImage,
+                    image_url: absImage
+                };
+
+                U.shareUnitToWhatsApp(sharePayload, window.location.href);
+            });
+        }
     }
 
     function message(title, text, retry) {

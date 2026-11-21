@@ -2,7 +2,7 @@
     "use strict";
 
     var SEARCH_URL = "/api/search/global-search";
-    var WHATSAPP_NUMBER = "201114842007";
+    var WHATSAPP_NUMBER = "201105094278";
 
     var form = document.getElementById("search-form");
     var resetBtn = document.getElementById("reset-btn");
@@ -22,6 +22,7 @@
     var nextUrl = null;
     var shown = 0;
     var requestId = 0;
+    var unitsById = {};
 
     /* ---------- أدوات صغيرة ---------- */
     function esc(value) {
@@ -46,7 +47,6 @@
     }
 
     function setListingType(nextType) {
-        // الضغط على نفس الزر المحدد يعيد للكل ("")، والضغط على الآخر ينقل المؤشر إليه مباشرة
         selectedListingType = (selectedListingType === nextType) ? "" : nextType;
         syncListingTabsUI();
         search();
@@ -214,6 +214,9 @@
                     '<a class="wa-btn" href="' + esc(whatsappLink(unit)) + '" target="_blank" rel="noopener noreferrer">' +
                         ICON_CHAT + 'تواصل عبر واتساب' +
                     '</a>' +
+                    '<button type="button" class="share-wa-btn" data-unit-id="' + esc(unit.id) + '">' +
+                        'مشاركة لصديق عبر واتساب' +
+                    '</button>' +
                 '</div>' +
             '</article>';
     }
@@ -263,6 +266,7 @@
             moreBtn.hidden = true;
             countEl.textContent = "جارٍ تحميل الوحدات";
             shown = 0;
+            unitsById = {};
         }
 
         fetch(url, { headers: { Accept: "application/json" } })
@@ -276,6 +280,12 @@
                 var items = Array.isArray(data) ? data : data.results || [];
                 var total = Array.isArray(data) ? items.length : (data.count != null ? data.count : items.length);
                 nextUrl = Array.isArray(data) ? null : data.next;
+
+                items.forEach(function (item) {
+                    if (item && item.id != null) {
+                        unitsById[String(item.id)] = item;
+                    }
+                });
 
                 var html = items.map(card).join("");
                 if (append) resultsEl.insertAdjacentHTML("beforeend", html);
@@ -337,6 +347,46 @@
     }
 
     /* ---------- الأحداث ---------- */
+    if (resultsEl) {
+        resultsEl.addEventListener("click", function (event) {
+            var btn = event.target.closest(".share-wa-btn");
+            if (!btn) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            var unitId = btn.getAttribute("data-unit-id");
+            var rawUnit = unitsById[String(unitId)];
+            if (!rawUnit || !window.Units || typeof window.Units.shareUnitToWhatsApp !== "function") return;
+
+            var place = [rawUnit.district, rawUnit.city].filter(Boolean).join("، ");
+            var absImage = rawUnit.main_image
+                ? new URL(rawUnit.main_image, window.location.origin).href
+                : "";
+            var detailUrl = new URL("/unit/" + rawUnit.id + "/", window.location.origin).href;
+
+            var sharePayload = {
+                name: rawUnit.name,
+                title: rawUnit.name,
+                code: rawUnit.code,
+                category: rawUnit.category,
+                category_label: rawUnit.listing_type_display,
+                price: rawUnit.price
+                    ? num(rawUnit.price) + " جنيه" + (rawUnit.listing_type === "rent" ? " / شهريًا" : "")
+                    : "",
+                rooms: rawUnit.rooms,
+                bathrooms: rawUnit.bathrooms,
+                area: rawUnit.area ? num(rawUnit.area) + " م²" : "",
+                floor: rawUnit.floor,
+                location: place,
+                image: absImage,
+                image_url: absImage
+            };
+
+            window.Units.shareUnitToWhatsApp(sharePayload, detailUrl);
+        });
+    }
+
     if (form) {
         form.addEventListener("submit", function (event) {
             event.preventDefault();
